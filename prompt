@@ -1,1 +1,42 @@
+ #region SearchProducts - Searches products by term
+ public List<Product> SearchProducts(string searchTerm)
+ {
+     List<Product> products = new List<Product>();
+     try
+     {
+         var parameter = new SqlParameter("@SearchTerm", searchTerm);
+
+         products = context.Products
+             .FromSqlRaw("EXEC sp_SearchProducts @SearchTerm", parameter)
+             .ToList();
+     }
+     catch (Exception ex)
+     {
+         Console.WriteLine(ex.Message);
+         products = new List<Product>();
+     }
+     return products;
+ }
+ #endregion
+
+#region GetProductsByCategory
+public List<Product> GetProductsByCategory(int categoryId)
+{
+    //To Do: Implement appropriate logic and change the return statement as per your logic
+    List<Product> products = new List<Product>();
+    try
+    {
+        products = (from product in context.Products
+                    where product.CategoryId == categoryId
+                    select product).ToList();
+    }
+    catch (Exception ex)
+    {
+        products = new List<Product>();
+        Console.WriteLine(ex.Message);
+    }
+    return products;
+}
+#endregion
+
 
