@@ -1,0 +1,185 @@
+product service.ts
+
+import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
+import { Product } from '../models/product.model';
+
+@Injectable({ providedIn: 'root' })
+export class ProductService {
+  private baseUrl = 'https://your-api-url.com/api/products'; // Replace with actual API URL
+
+  constructor(private http: HttpClient) {}
+
+  searchProducts(term: string): Observable<Product[]> {
+    return this.http.get<Product[]>(`${this.baseUrl}/search?term=${term}`);
+  }
+
+  getProductsByCategory(categoryId: number): Observable<Product[]> {
+    return this.http.get<Product[]>(`${this.baseUrl}/category/${categoryId}`);
+  }
+
+  getAllCategories(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/categories`);
+  }
+}
+
+_________
+product-list.component.html
+
+<nav class="navbar">
+  <div class="navbar-left">
+    <input type="text" [(ngModel)]="searchTerm" placeholder="Search products..." (input)="onSearch()" />
+    <select [(ngModel)]="selectedPriceRange" (change)="onFilterChange()">
+      <option value="">All Prices</option>
+      <option value="0-5000">Below ₹5000</option>
+      <option value="5000-10000">₹5000 - ₹10000</option>
+      <option value="10000-20000">₹10000 - ₹20000</option>
+      <option value="20000+">Above ₹20000</option>
+    </select>
+  </div>
+
+  <div class="navbar-right">
+    <select [(ngModel)]="selectedCategory" (change)="onCategoryChange()">
+      <option value="">All Categories</option>
+      <option *ngFor="let category of categories" [value]="category.categoryID">{{ category.name }}</option>
+    </select>
+  </div>
+</nav>
+
+<div *ngIf="products.length === 0" class="no-products">
+  No products available.
+</div>
+
+<div class="product-grid">
+  <div *ngFor="let product of filteredProducts" class="product-card">
+    <img [src]="product.thumbnailURL" alt="{{ product.name }}" />
+    <h3>{{ product.name }}</h3>
+    <p>{{ product.description }}</p>
+    <p><strong>₹{{ product.price }}</strong></p>
+    
+    <button *ngIf="isAdmin" (click)="onUpdate(product.productID)">Update</button>
+    <button *ngIf="isAdmin" (click)="onDelete(product.productID)">Delete</button>
+  </div>
+</div>
+
+
+________
+product-list.component.ts
+
+import { Component, OnInit } from '@angular/core';
+import { ProductService } from '../../services/product.service';
+import { Product } from '../../models/product.model';
+
+@Component({
+  selector: 'app-product-list',
+  templateUrl: './product-list.component.html',
+  styleUrls: ['./product-list.component.css'],
+})
+export class ProductListComponent implements OnInit {
+  products: Product[] = [];
+  filteredProducts: Product[] = [];
+  categories: any[] = [];
+  searchTerm: string = '';
+  selectedCategory: number | null = null;
+  selectedPriceRange: string = '';
+  isAdmin: boolean = false;
+
+  constructor(private productService: ProductService) {}
+
+  ngOnInit(): void {
+    this.loadAllProducts();
+    this.loadCategories();
+    this.checkAdminRole(); // simulate authentication
+  }
+
+  loadAllProducts() {
+    this.productService.searchProducts('').subscribe((res) => {
+      this.products = res;
+      this.applyFilters();
+    });
+  }
+
+  loadCategories() {
+    this.productService.getAllCategories().subscribe((res) => {
+      this.categories = res;
+    });
+  }
+
+  onSearch() {
+    this.productService.searchProducts(this.searchTerm).subscribe((res) => {
+      this.products = res;
+      this.applyFilters();
+    });
+  }
+
+  onCategoryChange() {
+    this.applyFilters();
+  }
+
+  onFilterChange() {
+    this.applyFilters();
+  }
+
+  applyFilters() {
+    this.filteredProducts = this.products.filter(product => {
+      const inCategory = this.selectedCategory ? product.categoryID === +this.selectedCategory : true;
+      const [min, max] = this.getPriceRange(this.selectedPriceRange);
+      const inPrice = product.price >= min && (max === null || product.price <= max);
+      return inCategory && inPrice;
+    });
+  }
+
+  getPriceRange(range: string): [number, number | null] {
+    switch (range) {
+      case '0-5000': return [0, 5000];
+      case '5000-10000': return [5000, 10000];
+      case '10000-20000': return [10000, 20000];
+      case '20000+': return [20000, null];
+      default: return [0, null];
+    }
+  }
+
+  checkAdminRole() {
+    const role = localStorage.getItem('userRole'); // Simulated role check
+    this.isAdmin = role === 'Admin';
+  }
+
+  onUpdate(productId: number) {
+    alert(`Update product: ${productId}`);
+  }
+
+  onDelete(productId: number) {
+    alert(`Delete product: ${productId}`);
+  }
+}
+
+_______
+product-list.component.css
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+}
+.navbar-left input, .navbar-left select {
+  margin-right: 10px;
+}
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+}
+.product-card {
+  border: 1px solid #ccc;
+  padding: 15px;
+  border-radius: 10px;
+  text-align: center;
+}
+.no-products {
+  text-align: center;
+  font-size: 1.2em;
+  color: red;
+  margin-top: 20px;
+}
+
