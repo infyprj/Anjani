@@ -39,10 +39,31 @@ public List<Product> GetProductsByCategory(int categoryId)
 }
 #endregion
 
+ #region GetProductsByPriceRange
+        public List<Products> GetProductsByPriceRange(decimal minPrice, decimal maxPrice)
+        {
+            //To Do: Implement appropriate logic and change the return statement as per your logic
+            List<Products> products = new List<Products>();
+            try
+            {
+                products = (from product in Context.Products
+                           where product.Price >= minPrice && product.Price <= maxPrice
+                           select product).ToList();
+            }
+            catch (Exception ex)
+            {
+                products = new List<Products>();
+                Console.WriteLine(ex.Message);
+            }
+            return products;
+        }
+        #endregion
+
 The above DAL methods  i thought can be useful and implemented. I ensure you that all are working well.
 Now I need to complete the front-end part of 3 user stories using angular. Those 3 user stories are searching products,filterbycategory,
-navigation bar for the application and "no products available" has to be displayed if the required products are not available in the database.
+for the application and "no products available" has to be displayed if the required products are not available in the database.
 for each product there should be enable two buttons of "update" and "delete" if the user is Admin.
+and also i want price range drop downlist next to searchbar.
 if other than admin opens the website the products should be displayed normally only.
 
 the below is the database schema of our shop3DApp
