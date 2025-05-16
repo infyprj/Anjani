@@ -440,6 +440,7 @@ ________________________
 
 provide component.html and component.ts codes for searchproduct,filterbycategory using angular to implement above effectively.
 give component.ts code as below for search,filter,pricerange.
+consider below codes for reference.
 
 //import { Component } from '@angular/core';
 
