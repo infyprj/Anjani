@@ -232,4 +232,97 @@ searchProductByCategory(categoryId: string) {
   }
 }
 
+_________
 
+import { Component, OnInit } from '@angular/core';
+import { ProductService } from '../services/product-service/product.service';
+import { IProduct } from '../interfaces/product';
+import { AuthService } from '../services/auth-service/auth.service';
+
+@Component({
+  selector: 'app-product-search',
+  templateUrl: './product-search.component.html',
+  styleUrls: ['./product-search.component.css']
+})
+export class ProductSearchComponent implements OnInit {
+  products: IProduct[] = []; // all fetched products
+  filteredProducts: IProduct[] = []; // displayed after applying filters
+
+  categories = [
+    { id: 0, name: 'All Categories' },
+    { id: 1, name: 'Sofa' },
+    { id: 2, name: 'Table' },
+    { id: 3, name: 'Bed' },
+    { id: 4, name: 'Chair' }
+  ];
+
+  priceRanges = [
+    { label: 'All Prices', min: 0, max: 999999 },
+    { label: 'Under ₹5000', min: 0, max: 5000 },
+    { label: '₹5000 - ₹10000', min: 5000, max: 10000 },
+    { label: '₹10000 - ₹20000', min: 10000, max: 20000 },
+    { label: 'Above ₹20000', min: 20000, max: 999999 }
+  ];
+
+  selectedCategoryId: number = 0;
+  selectedPriceRange = this.priceRanges[0];
+  searchTerm: string = '';
+  isAdmin: boolean = false;
+  showMsgDiv: boolean = false;
+
+  constructor(private _productService: ProductService, private authService: AuthService) { }
+
+  ngOnInit() {
+    this.isAdmin = this.authService.getUserRole() === 'Admin';
+    this.fetchProducts(); // Load all products initially
+  }
+
+  fetchProducts() {
+    this._productService.getProducts().subscribe(
+      response => {
+        this.products = response;
+        this.applyFilters();
+      },
+      error => {
+        console.log(error);
+      }
+    );
+  }
+
+  applyFilters() {
+    const term = this.searchTerm.toLowerCase();
+    const { min, max } = this.selectedPriceRange;
+
+    this.filteredProducts = this.products.filter(product => {
+      const matchesSearch = term === '' || product.name.toLowerCase().includes(term);
+      const matchesCategory = this.selectedCategoryId === 0 || product.categoryId === this.selectedCategoryId;
+      const matchesPrice = product.price >= min && product.price <= max;
+      return matchesSearch && matchesCategory && matchesPrice;
+    });
+
+    this.showMsgDiv = this.filteredProducts.length === 0;
+  }
+
+  onSearch() {
+    this.applyFilters();
+  }
+
+  onCategoryChange() {
+    this.applyFilters();
+  }
+
+  onPriceChange() {
+    this.applyFilters();
+  }
+
+  updateProduct(productId: number) {
+    console.log('Update product:', productId);
+    // Add navigation or modal logic here
+  }
+
+  deleteProduct(productId: number) {
+    if (confirm('Are you sure you want to delete this product?')) {
+      this._productService.deleteProduct(productId).subscribe(() => this.fetchProducts());
+    }
+  }
+}
