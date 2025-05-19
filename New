@@ -125,3 +125,159 @@ ___modified
     </div>
   </div>
 </div>
+
+---------------------
+import { Component, OnInit } from '@angular/core';
+import { ProductService } from '../services/product.service';
+import { AuthService } from '../services/auth.service';
+import { Product } from '../models/product.model';
+
+@Component({
+  selector: 'app-saved-products',
+  templateUrl: './saved-products.component.html',
+  styleUrls: ['./saved-products.component.css']
+})
+export class SavedProductsComponent implements OnInit {
+  savedProducts: Product[] = [];
+  isLoading: boolean = false;
+  errorMessage: string = '';
+  currentUserId: number = 0;
+
+  constructor(
+    private productService: ProductService,
+    private authService: AuthService
+  ) { }
+
+  ngOnInit(): void {
+    this.currentUserId = this.authService.getCurrentUserId();
+    this.loadSavedProducts();
+  }
+
+  loadSavedProducts(): void {
+    this.isLoading = true;
+    this.productService.getSavedProducts(this.currentUserId).subscribe({
+      next: (products) => {
+        this.savedProducts = products;
+        this.isLoading = false;
+      },
+      error: (err) => {
+        this.errorMessage = 'Failed to load saved products';
+        this.isLoading = false;
+        console.error(err);
+      }
+    });
+  }
+
+  saveProduct(productId: number): void {
+    this.productService.saveProduct(this.currentUserId, productId).subscribe({
+      next: (success) => {
+        if (success) {
+          this.loadSavedProducts(); // Refresh the list
+        }
+      },
+      error: (err) => {
+        console.error('Error saving product', err);
+      }
+    });
+  }
+
+  removeSavedProduct(productId: number): void {
+    this.productService.removeSavedProduct(this.currentUserId, productId).subscribe({
+      next: (success) => {
+        if (success) {
+          this.savedProducts = this.savedProducts.filter(p => p.productId !== productId);
+        }
+      },
+      error: (err) => {
+        console.error('Error removing saved product', err);
+      }
+    });
+  }
+}
+....
+.html
+<div class="container mt-4">
+  <h2 class="mb-4">Your Saved Products</h2>
+  
+  <!-- Loading Indicator -->
+  <div *ngIf="isLoading" class="text-center">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <p>Loading your saved products...</p>
+  </div>
+
+  <!-- Error Message -->
+  <div *ngIf="errorMessage" class="alert alert-danger">
+    {{ errorMessage }}
+  </div>
+
+  <!-- No Products Message -->
+  <div *ngIf="!isLoading && savedProducts.length === 0" class="text-center mt-5">
+    <div class="alert alert-info w-50 mx-auto">
+      You haven't saved any products yet.
+    </div>
+  </div>
+
+  <!-- Products Grid -->
+  <div class="row" *ngIf="!isLoading && savedProducts.length > 0">
+    <div class="col-md-4 mb-4" *ngFor="let product of savedProducts">
+      <div class="card h-100 shadow-sm">
+        <img [src]="product.thumbnailUrl" 
+             class="card-img-top" 
+             alt="{{ product.name }}"
+             style="height: 250px; object-fit: cover;">
+        <div class="card-body">
+          <h5 class="card-title">{{ product.name }}</h5>
+          <p class="fw-bold text-success">₹{{ product.price }}</p>
+          <button class="btn btn-sm btn-danger" (click)="removeSavedProduct(product.productId)">
+            Remove
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+...
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { Product } from '../models/product.model';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class ProductService {
+  private apiUrl = 'https://your-api-url.com/api/products'; // Replace with your API URL
+
+  constructor(private http: HttpClient) { }
+
+  // Save a product for a user
+  saveProduct(userId: number, productId: number): Observable<boolean> {
+    return this.http.post<boolean>(`${this.apiUrl}/save`, { userId, productId });
+  }
+
+  // Get saved products for a user
+  getSavedProducts(userId: number): Observable<Product[]> {
+    return this.http.get<Product[]>(`${this.apiUrl}/saved/${userId}`);
+  }
+
+  // Remove a saved product
+  removeSavedProduct(userId: number, productId: number): Observable<boolean> {
+    return this.http.delete<boolean>(`${this.apiUrl}/saved/${userId}/${productId}`);
+  }
+}
+...
+import { Injectable } from '@angular/core';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class AuthService {
+  // This would come from your actual auth implementation
+  getCurrentUserId(): number {
+    // Return the logged-in user's ID
+    // In a real app, this would come from your auth state
+    return 1; // Example - replace with actual user ID
+  }
+}
