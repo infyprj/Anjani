@@ -60,3 +60,68 @@
     </div>
   </div>
 </div>
+
+___modified
+
+<!-- FILTER SECTION -->
+<div class="container my-4">
+  <div class="row justify-content-center align-items-center">
+    <!-- Category Dropdown -->
+    <div class="col-md-3">
+      <select class="form-select" [(ngModel)]="selectedCategoryId" (change)="onCategoryChange()">
+        <option *ngFor="let category of categories" [value]="category.id">{{ category.name }}</option>
+      </select>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="col-md-6">
+      <input type="text"
+             [(ngModel)]="searchTerm"
+             placeholder="Search products..."
+             (input)="onSearch()"
+             class="form-control" />
+    </div>
+
+    <!-- Price Dropdown -->
+    <div class="col-md-3 mt-3 mt-md-0">
+      <select class="form-select" [(ngModel)]="selectedPriceRange" (change)="onPriceChange()">
+        <option *ngFor="let range of priceRanges" [ngValue]="range">{{ range.label }}</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- NO PRODUCTS MESSAGE -->
+<div *ngIf="products.length === 0 || filteredProducts.length === 0" class="text-center mt-5">
+  <div class="alert alert-warning w-50 mx-auto">
+    No products available.
+  </div>
+</div>
+
+<!-- PRODUCTS LISTING -->
+<div class="container mt-4" *ngIf="products.length > 0 && filteredProducts.length > 0">
+  <div class="row">
+    <div class="col-md-4 mb-4" *ngFor="let product of filteredProducts">
+      <div class="card h-100 shadow-sm">
+        <img [src]="product.thumbnailUrl"
+             class="card-img-top"
+             alt="{{ product.name }}"
+             style="height: 250px; object-fit: cover; cursor: pointer;"
+             (click)="viewProductDetails(product.productId)" />
+        <div class="card-body">
+          <h5 class="card-title"
+              style="cursor: pointer;"
+              (click)="viewProductDetails(product.productId)">
+            {{ product.name }}
+          </h5>
+          <!--<p class="card-text">{{ product.description }}</p>-->
+          <p class="fw-bold text-success">₹{{ product.price }}</p>
+          <div *ngIf="isAdmin">
+            <button class="btn btn-sm btn-primary me-2" (click)="updateProduct(product.productId)">Update</button>
+            <button class="btn btn-sm btn-danger" (click)="deleteProduct(product.productId)">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
