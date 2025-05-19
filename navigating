@@ -20,29 +20,33 @@
 _______________$$$
 
 modified code
-
 <!-- PRODUCTS LISTING -->
 <div class="container mt-4">
-  <div class="row">
-    <div class="col-md-4 mb-4" *ngFor="let product of filteredProducts">
-      <div class="card h-100 shadow-sm">
-        <a [routerLink]="['/product', product.productId]">
-          <img [src]="product.thumbnailUrl" class="card-img-top" alt="{{ product.name }}" style="height: 250px; object-fit: cover;" />
-        </a>
-        <div class="card-body">
-          <h5 class="card-title">
-            <a [routerLink]="['/product', product.productId]" class="text-decoration-none text-dark">
-              {{ product.name }}
-            </a>
-          </h5>
-          <!--<p class="card-text">{{ product.description }}</p>-->
-          <p class="fw-bold text-success">₹{{ product.price }}</p>
-          <div *ngIf="isAdmin">
-            <button class="btn btn-sm btn-primary me-2" (click)="updateProduct(product.productId)">Update</button>
-            <button class="btn btn-sm btn-danger" (click)="deleteProduct(product.productId)">Delete</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+  <div class="row">
+    <div class="col-md-4 mb-4" *ngFor="let product of filteredProducts">
+      <div class="card h-100 shadow-sm">
+        <img 
+          [src]="product.thumbnailUrl" 
+          class="card-img-top" 
+          alt="{{ product.name }}" 
+          style="height: 250px; object-fit: cover; cursor: pointer;" 
+          (click)="viewProductDetails(product.productId)" 
+        />
+        <div class="card-body">
+          <h5 
+            class="card-title" 
+            style="cursor: pointer;" 
+            (click)="viewProductDetails(product.productId)">
+            {{ product.name }}
+          </h5>
+          <!--<p class="card-text">{{ product.description }}</p>-->
+          <p class="fw-bold text-success">₹{{ product.price }}</p>
+          <div *ngIf="isAdmin">
+            <button class="btn btn-sm btn-primary me-2" (click)="updateProduct(product.productId)">Update</button>
+            <button class="btn btn-sm btn-danger" (click)="deleteProduct(product.productId)">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
