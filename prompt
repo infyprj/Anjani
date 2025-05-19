@@ -514,30 +514,7 @@ export class AddProductComponent implements OnInit {
 
 ______________________________________________________________________________________________
 
-#region SaveProduct - Saves a product for a user
-public bool SaveProduct(int userId, int productId)
-{
-    bool status = false;
-    try
-    {
-        var parameters = new SqlParameter[]
-        {
-            new SqlParameter("@UserID", userId),
-            new SqlParameter("@ProductID", productId)
-        };
 
-        var result = context.Database
-            .ExecuteSqlRaw("EXEC sp_SaveProduct @UserID, @ProductID", parameters);
-
-        status = result > 0;
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine(ex.Message);
-        status = false;
-    }
-    return status;
-}
 #endregion
 
 #region GetSavedProducts - Gets all saved products for a user
@@ -563,8 +540,18 @@ public List<Product> GetSavedProducts(int userId)
 }
 #endregion
 
-provide component.html and component.ts codes for saveproduct and get saved products using angular to implement above effectively.
-give component.ts code as below for saved products.
+provide component.html and component.ts codes for get saved products using angular to implement above effectively.
+give component.ts code as below for get saved products.
+and component.html should satisfy the following things:
+1.after clicking on wishlist which will be displayed on the home page,it should navigate to the get saved products and display the products which
+are added to wishlist.
+2.each product should be displayed as,
+  -the product image to left of the screen
+  -it should display the product name to right of product image,not to immediate right but not too far.
+  -down to product name the price should be displayed
+  -down to price it should have "add to cart" and "remove from wishlist" side by side
+  -finally,each product image and its details should be enclosed within a box kind of structure to differentiate between 2 products.
+3.each row should have only 2 products.
 consider below codes for reference.
 
 import { Component, OnInit } from '@angular/core';
