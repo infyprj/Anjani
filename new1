@@ -1,0 +1,135 @@
+import { Component,OnInit } from '@angular/core';
+import { IProduct } from '../interfaces/product';
+import { ProductService } from '../services/product-service/product.service';
+import { AuthService } from '../services/auth-service/auth.service';
+import { Router } from '@angular/router';
+import { CartService } from '../services/cart-service/cart.service';
+import { ICartItem } from '../interfaces/cart';
+
+@Component({
+  selector: 'app-view-wishlist',
+  templateUrl: './view-wishlist.component.html',
+  styleUrls: ['./view-wishlist.component.css']
+})
+export class ViewWishlistComponent implements OnInit{
+  savedProducts: IProduct[] = [];
+  isLoading: boolean = false;
+  errorMessage: String = "";
+  currentUserId: number = 0;
+
+  constructor(private _productService: ProductService, private authService: AuthService, private router: Router,private _cartService:CartService) { }
+
+  ngOnInit():void {
+    this.loadSavedProducts();
+  }
+
+  loadSavedProducts() :void {
+    this.isLoading = true;
+    this._productService.getSavedProducts(this.currentUserId).subscribe(
+      response => {
+        this.savedProducts = response;
+        this.isLoading = false;
+      },
+      error => {
+        this.errorMessage = "failed to load saved products";
+        this.isLoading = false;
+        console.error(error);
+      }
+    );
+  }
+  removeFromWishlist(productId: number) {
+    this._productService.removeSavedProduct(this.currentUserId, productId).subscribe(
+      response => {
+        this.savedProducts = this.savedProducts.filter(p => p.productId !== productId);
+      },
+      error => {
+        console.error("error removing from wishlist", error);
+      }
+    );
+  }
+
+  addToCart(product:IProduct): void {
+    var cartItem: ICartItem = {
+      productId: product.productId,
+      quantity: 1,
+      userId:4
+    };
+    this._cartService.addProductToCart(cartItem);
+  }
+
+  viewProductDetails(productId: number): void {
+    this.router.navigate(['/product', productId]);
+  }
+ _________________________________
+}
+wishlist.component.html:
+
+<div class="container my-4">
+  <h2 class="mb-4">Your Wishlist</h2>
+
+  <!-- Loading Indicator -->
+  <div *ngIf="isLoading" class="text-center">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <p>Loading your wishlist items...</p>
+  </div>
+
+  <!-- Error Message -->
+  <div *ngIf="errorMessage" class="alert alert-danger">
+    {{ errorMessage }}
+  </div>
+
+  <!-- No Products Message -->
+  <div *ngIf="!isLoading && savedProducts.length === 0" class="text-center mt-5">
+    <div class="alert alert-info w-50 mx-auto">
+      Your wishlist is empty. Start saving your favorite products!
+    </div>
+  </div>
+
+  <!-- Products List -->
+  <div class="row">
+    <div class="col-md-6 mb-4" *ngFor="let product of savedProducts">
+      <div class="card h-100 shadow-sm p-3" style="border-radius: 10px;">
+        <div class="row g-0">
+          <!-- Product Image -->
+          <div class="col-md-4">
+            <img [src]="product.thumbnailUrl"
+                 class="img-fluid rounded-start"
+                 alt="{{ product.name }}"
+                 style="height: 180px; width: 100%; object-fit: cover; cursor: pointer;"
+                 (click)="viewProductDetails(product.productId)">
+          </div>
+
+          <!-- Product Details -->
+          <div class="col-md-8">
+            <div class="card-body h-100 d-flex flex-column">
+              <!-- Product Name -->
+              <h5 class="card-title mb-2" style="cursor: pointer;"
+                  (click)="viewProductDetails(product.productId)">
+                {{ product.name }}
+              </h5>
+
+              <!-- Price -->
+              <p class="fw-bold text-success mb-3">₹{{ product.price }}</p>
+
+              <!-- Buttons -->
+              <div class="mt-auto d-flex gap-2">
+                <div *ngFor="let product of savedProducts">
+                <button class="btn btn-primary btn-sm" (click)="addToCart(product)">
+                  Add to Cart
+                </button>
+               </div>
+                <button class="btn btn-outline-danger btn-sm" (click)="removeFromWishlist(product.productId)">
+                  Remove
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+consider the above codes and modify accordingly so that the products which are added to wishlist are displayed in wishlist.
+now they are not displaying and show respective message when it is empty.
