@@ -1,312 +1,62 @@
-product service.ts
+<!-- FILTER SECTION -->
+<div class="container my-4">
+  <div class="row justify-content-center align-items-center">
+    <!-- Category Dropdown -->
+    <div class="col-md-3">
+      <select class="form-select" [(ngModel)]="selectedCategoryId" (change)="onCategoryChange()">
+        <option *ngFor="let category of categories" [value]="category.id">{{ category.name }}</option>
+      </select>
+    </div>
 
-import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
-import { Product } from '../models/product.model';
+    <!-- Search Bar -->
+    <div class="col-md-6">
+      <input type="text"
+             [(ngModel)]="searchTerm"
+             placeholder="Search products..."
+             (input)="onSearch()"
+             class="form-control" />
+    </div>
 
-@Injectable({ providedIn: 'root' })
-export class ProductService {
-  private baseUrl = 'https://your-api-url.com/api/products'; // Replace with actual API URL
-
-  constructor(private http: HttpClient) {}
-
-  searchProducts(term: string): Observable<Product[]> {
-    return this.http.get<Product[]>(`${this.baseUrl}/search?term=${term}`);
-  }
-
-  getProductsByCategory(categoryId: number): Observable<Product[]> {
-    return this.http.get<Product[]>(`${this.baseUrl}/category/${categoryId}`);
-  }
-
-  getAllCategories(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/categories`);
-  }
-}
-
-_________
-product-list.component.html
-
-<nav class="navbar">
-  <div class="navbar-left">
-    <input type="text" [(ngModel)]="searchTerm" placeholder="Search products..." (input)="onSearch()" />
-    <select [(ngModel)]="selectedPriceRange" (change)="onFilterChange()">
-      <option value="">All Prices</option>
-      <option value="0-5000">Below ₹5000</option>
-      <option value="5000-10000">₹5000 - ₹10000</option>
-      <option value="10000-20000">₹10000 - ₹20000</option>
-      <option value="20000+">Above ₹20000</option>
-    </select>
-  </div>
-
-  <div class="navbar-right">
-    <select [(ngModel)]="selectedCategory" (change)="onCategoryChange()">
-      <option value="">All Categories</option>
-      <option *ngFor="let category of categories" [value]="category.categoryID">{{ category.name }}</option>
-    </select>
-  </div>
-</nav>
-
-<div *ngIf="products.length === 0" class="no-products">
-  No products available.
-</div>
-
-<div class="product-grid">
-  <div *ngFor="let product of filteredProducts" class="product-card">
-    <img [src]="product.thumbnailURL" alt="{{ product.name }}" />
-    <h3>{{ product.name }}</h3>
-    <p>{{ product.description }}</p>
-    <p><strong>₹{{ product.price }}</strong></p>
-    
-    <button *ngIf="isAdmin" (click)="onUpdate(product.productID)">Update</button>
-    <button *ngIf="isAdmin" (click)="onDelete(product.productID)">Delete</button>
+    <!-- Price Dropdown -->
+    <div class="col-md-3 mt-3 mt-md-0">
+      <select class="form-select" [(ngModel)]="selectedPriceRange" (change)="onPriceChange()">
+        <option *ngFor="let range of priceRanges" [ngValue]="range">{{ range.label }}</option>
+      </select>
+    </div>
   </div>
 </div>
 
-
-________
-product-list.component.ts
-
-import { Component, OnInit } from '@angular/core';
-import { ProductService } from '../../services/product.service';
-import { Product } from '../../models/product.model';
-
-@Component({
-  selector: 'app-product-list',
-  templateUrl: './product-list.component.html',
-  styleUrls: ['./product-list.component.css'],
-})
-export class ProductListComponent implements OnInit {
-  products: Product[] = [];
-  filteredProducts: Product[] = [];
-  categories: any[] = [];
-  searchTerm: string = '';
-  selectedCategory: number | null = null;
-  selectedPriceRange: string = '';
-  isAdmin: boolean = false;
-
-  constructor(private productService: ProductService) {}
-
-  ngOnInit(): void {
-    this.loadAllProducts();
-    this.loadCategories();
-    this.checkAdminRole(); // simulate authentication
-  }
-
-  loadAllProducts() {
-    this.productService.searchProducts('').subscribe((res) => {
-      this.products = res;
-      this.applyFilters();
-    });
-  }
-
-  loadCategories() {
-    this.productService.getAllCategories().subscribe((res) => {
-      this.categories = res;
-    });
-  }
-
-  onSearch() {
-    this.productService.searchProducts(this.searchTerm).subscribe((res) => {
-      this.products = res;
-      this.applyFilters();
-    });
-  }
-
-  onCategoryChange() {
-    this.applyFilters();
-  }
-
-  onFilterChange() {
-    this.applyFilters();
-  }
-
-  applyFilters() {
-    this.filteredProducts = this.products.filter(product => {
-      const inCategory = this.selectedCategory ? product.categoryID === +this.selectedCategory : true;
-      const [min, max] = this.getPriceRange(this.selectedPriceRange);
-      const inPrice = product.price >= min && (max === null || product.price <= max);
-      return inCategory && inPrice;
-    });
-  }
-
-  getPriceRange(range: string): [number, number | null] {
-    switch (range) {
-      case '0-5000': return [0, 5000];
-      case '5000-10000': return [5000, 10000];
-      case '10000-20000': return [10000, 20000];
-      case '20000+': return [20000, null];
-      default: return [0, null];
-    }
-  }
-
-  checkAdminRole() {
-    const role = localStorage.getItem('userRole'); // Simulated role check
-    this.isAdmin = role === 'Admin';
-  }
-
-  onUpdate(productId: number) {
-    alert(`Update product: ${productId}`);
-  }
-
-  onDelete(productId: number) {
-    alert(`Delete product: ${productId}`);
-  }
-}
-
-_______
-product-list.component.css
-
-.navbar {
-  display: flex;
-  justify-content: space-between;
-  padding: 10px;
-}
-.navbar-left input, .navbar-left select {
-  margin-right: 10px;
-}
-.product-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 20px;
-}
-.product-card {
-  border: 1px solid #ccc;
-  padding: 15px;
-  border-radius: 10px;
-  text-align: center;
-}
-.no-products {
-  text-align: center;
-  font-size: 1.2em;
-  color: red;
-  margin-top: 20px;
-}
-_____________
-
-import { Component, OnInit } from '@angular/core';
-import { ProductService } from '../services/product-service/product.service';
-import { IProduct } from '../interfaces/product';
-import { AuthService } from '../services/auth.service'; // Assuming auth service is implemented
-
-@Component({
-  selector: 'app-product-search',
-  templateUrl: './product-search.component.html',
-  styleUrls: ['./product-search.component.css']
-})
-export class ProductSearchComponent implements OnInit {
-  products: IProduct[] = [];
-  categories = [
-    { id: 0, name: 'All Categories' },
-    { id: 1, name: 'Sofa' },
-    { id: 2, name: 'Table' },
-    { id: 3, name: 'Bed' },
-    { id: 4, name: 'Chair' }
-  ];
-  priceRanges = [
-    { label: 'All Prices', min: 0, max: 999999 },
-    { label: 'Under ₹5000', min: 0, max: 5000 },
-    { label: '₹5000 - ₹10000', min: 5000, max: 10000 },
-    { label: '₹10000 - ₹20000', min: 10000, max: 20000 },
-    { label: 'Above ₹20000', min: 20000, max: 999999 }
-  ];
-  selectedCategoryId: number = 0;
-  selectedPriceRange = this.priceRanges[0];
-  searchTerm: string = '';
-  isAdmin: boolean = false;
-
-  constructor(private productService: ProductService, private authService: AuthService) {}
-
-  ngOnInit() {
-    this.isAdmin = this.authService.getUserRole() === 'Admin';
-    this.fetchProducts();
-  }
-
-  fetchProducts() {
-    if (this.searchTerm) {
-      this.productService.searchProducts(this.searchTerm).subscribe(p => this.filterLocally(p));
-    } else if (this.selectedCategoryId && this.selectedCategoryId !== 0) {
-      this.productService.getProductsByCategory(this.selectedCategoryId).subscribe(p => this.filterLocally(p));
-    } else {
-      this.productService.getAllProducts().subscribe(p => this.filterLocally(p));
-    }
-  }
-
-  filterLocally(products: IProduct[]) {
-    const { min, max } = this.selectedPriceRange;
-    this.products = products.filter(p => p.price >= min && p.price <= max);
-  }
-
-  onSearch() {
-    this.fetchProducts();
-  }
-
-  onCategoryChange() {
-    this.fetchProducts();
-  }
-
-  onPriceChange() {
-    this.fetchProducts();
-  }
-
-  updateProduct(productId: number) {
-    // Navigate or open modal to update product
-    console.log('Update product:', productId);
-  }
-
-  deleteProduct(productId: number) {
-    if (confirm('Are you sure you want to delete this product?')) {
-      this.productService.deleteProduct(productId).subscribe(() => this.fetchProducts());
-    }
-  }
-}
-
-_______
-.html
-<div class="filters mb-4">
-  <input type="text" [(ngModel)]="searchTerm" placeholder="Search products..." (input)="onSearch()" class="form-control d-inline-block w-25 me-2" />
-
-  <select class="form-select d-inline-block w-25 me-2" [(ngModel)]="selectedCategoryId" (change)="onCategoryChange()">
-    <option *ngFor="let category of categories" [value]="category.id">{{ category.name }}</option>
-  </select>
-
-  <select class="form-select d-inline-block w-25" [(ngModel)]="selectedPriceRange" (change)="onPriceChange()">
-    <option *ngFor="let range of priceRanges" [ngValue]="range">{{ range.label }}</option>
-  </select>
+<!-- NO PRODUCTS MESSAGE -->
+<div *ngIf="products.length === 0" class="text-center mt-5">
+  <div class="alert alert-warning w-50 mx-auto">
+    No products available.
+  </div>
 </div>
 
-<div *ngIf="products.length === 0" class="alert alert-warning">
-  No products available.
+<!-- PRODUCTS LISTING -->
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-md-4 mb-4" *ngFor="let product of filteredProducts">
+      <div class="card h-100 shadow-sm">
+        <img [src]="product.thumbnailUrl"
+             class="card-img-top"
+             alt="{{ product.name }}"
+             style="height: 250px; object-fit: cover; cursor: pointer;"
+             (click)="viewProductDetails(product.productId)" />
+        <div class="card-body">
+          <h5 class="card-title"
+              style="cursor: pointer;"
+              (click)="viewProductDetails(product.productId)">
+            {{ product.name }}
+          </h5>
+          <!--<p class="card-text">{{ product.description }}</p>-->
+          <p class="fw-bold text-success">₹{{ product.price }}</p>
+          <div *ngIf="isAdmin">
+            <button class="btn btn-sm btn-primary me-2" (click)="updateProduct(product.productId)">Update</button>
+            <button class="btn btn-sm btn-danger" (click)="deleteProduct(product.productId)">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
-
-<div class="row">
-  <div class="col-md-4 mb-4" *ngFor="let product of products">
-    <div class="card h-100">
-      <img [src]="product.thumbnailUrl" class="card-img-top" alt="{{ product.name }}">
-      <div class="card-body">
-        <h5 class="card-title">{{ product.name }}</h5>
-        <p class="card-text">{{ product.description }}</p>
-        <p class="fw-bold text-success">₹{{ product.price }}</p>
-        <button *ngIf="isAdmin" class="btn btn-sm btn-primary me-2" (click)="updateProduct(product.productId)">Update</button>
-        <button *ngIf="isAdmin" class="btn btn-sm btn-danger" (click)="deleteProduct(product.productId)">Delete</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-______
-
-product.service.ts
-
-searchProducts(term: string): Observable<IProduct[]>;
-getProductsByCategory(categoryId: number): Observable<IProduct[]>;
-getAllProducts(): Observable<IProduct[]>;
-deleteProduct(productId: number): Observable<any>;
-______
-auth.service.ts
-getUserRole(): string {
-  const role = localStorage.getItem('userRole'); // 'Admin', 'Customer', etc.
-  return role ?? 'Guest';
-}
-
-
