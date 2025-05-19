@@ -438,3 +438,52 @@ export class SavedProductsComponent implements OnInit {
   padding: 0.25rem 0.5rem;
   font-size: 0.875rem;
 }
+
+...
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { BehaviorSubject, Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { User } from '../models/user.model'; // Assuming you have a User model
+
+@Injectable({
+  providedIn: 'root'
+})
+export class AuthService {
+  private currentUserSubject: BehaviorSubject<User | null>;
+  public currentUser: Observable<User | null>;
+
+  constructor(private http: HttpClient) {
+    // Initialize with user from localStorage if available
+    const storedUser = localStorage.getItem('currentUser');
+    this.currentUserSubject = new BehaviorSubject<User | null>(
+      storedUser ? JSON.parse(storedUser) : null
+    );
+    this.currentUser = this.currentUserSubject.asObservable();
+  }
+
+  // Add this method to get current user ID
+  getCurrentUserId(): number {
+    const user = this.currentUserSubject.value;
+    return user?.userId || 0; // Return 0 or handle null case as appropriate
+  }
+
+  // Your existing login method should set the user
+  login(email: string, password: string): Observable<User> {
+    return this.http.post<any>('/api/authenticate', { email, password })
+      .pipe(map(user => {
+        // Store user details and jwt token in local storage
+        localStorage.setItem('currentUser', JSON.stringify(user));
+        this.currentUserSubject.next(user);
+        return user;
+      }));
+  }
+
+  logout() {
+    // Remove user from local storage
+    localStorage.removeItem('currentUser');
+    this.currentUserSubject.next(null);
+  }
+
+  // Other existing auth methods...
+}
