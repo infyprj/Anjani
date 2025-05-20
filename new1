@@ -246,3 +246,79 @@ $$$$$$$
     </div>
   </div>
 </div>
+----------------------------------------------
+<div class="container my-4">
+  <h2 class="mb-4">Your Wishlist</h2>
+
+  <!-- Loading -->
+  <div *ngIf="isLoading" class="text-center">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <p>Loading your wishlist items...</p>
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="errorMessage" class="alert alert-danger">
+    {{ errorMessage }}
+  </div>
+
+  <!-- Empty Wishlist -->
+  <div *ngIf="!isLoading && savedProducts.length === 0" class="text-center mt-5">
+    <div class="alert alert-info w-50 mx-auto">
+      Your wishlist is empty. Start saving your favorite products!
+    </div>
+  </div>
+
+  <!-- Wishlist Items -->
+  <div class="row" *ngIf="!isLoading && savedProducts.length > 0">
+    <div class="col-md-6 mb-4" *ngFor="let product of savedProducts">
+      <div class="card h-100 shadow-sm p-3" style="border-radius: 10px;">
+        <div class="row g-0">
+
+          <!-- Image -->
+          <div class="col-md-4">
+            <img [src]="product.thumbnailUrl"
+                 class="img-fluid rounded-start"
+                 alt="{{ product.name }}"
+                 style="height: 180px; width: 100%; object-fit: cover; cursor: pointer;"
+                 (click)="viewProductDetails(product.productId)">
+          </div>
+
+          <!-- Details -->
+          <div class="col-md-8">
+            <div class="card-body h-100 d-flex flex-column">
+              <h5 class="card-title mb-2" style="cursor: pointer;"
+                  (click)="viewProductDetails(product.productId)">
+                {{ product.name }}
+              </h5>
+              <p class="fw-bold text-success mb-3">₹{{ product.price }}</p>
+
+              <!-- Buttons -->
+              <div class="mt-auto d-flex gap-2">
+                <button class="btn btn-primary btn-sm"
+                        (click)="addToCart(product)">
+                  Add to Cart
+                </button>
+
+                <button class="btn btn-outline-danger btn-sm"
+                        (click)="removeFromWishlist(product.productId)">
+                  Remove
+                </button>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+modify this html code so that
+-it has to display "please login or register for addding products to wishlist" this kind of similar message hs to be displayed if the user has still
+not logged in
+-if the user is logged in then, the products which are added to wishlist has to be displayed
+-by clicking on add to wislist button the product has to go to wishlist and it has to display there.
+-remove from wishlist and add to cart buttons has to work.
+make sure all the above conditions are satisfied
