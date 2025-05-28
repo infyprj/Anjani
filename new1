@@ -226,3 +226,271 @@ all the availble products has to be displayed.
 7.the search has to work according to applied filters if filters applied and also normally how the search works without filters to available products that helps user to find his/her desired products.If no products available according to filters applied or if the searched product is not available in available products,then display no products available.
 8.I want search bar not-too long but longer than now and filters should be not too-smaller but smaller than search bar.
 9.apply above modifications to provided code.
+----
+
+import { Component, OnInit } from '@angular/core';
+import { ProductService } from '../services/product-service/product.service';
+import { IProduct } from '../interfaces/product';
+import { AuthService } from '../services/auth-service/auth.service';
+import { ICategory } from '../interfaces/category';
+import { Router } from '@angular/router';
+@Component({
+  selector: 'app-product-search',
+  templateUrl: './product-search.component.html',
+  styleUrls: ['./product-search.component.css']
+})
+export class ProductSearchComponent implements OnInit {
+  products: IProduct[] = []; // all fetched products
+  //categoriess: ICategory[] = [];
+  filteredProducts: IProduct[] = []; // displayed after applying filters
+
+  categories = [
+    { id: 1, name: 'Sofa' },
+    { id: 2, name: 'Table' },
+    { id: 3, name: 'Bed' },
+    { id: 4, name: 'Chair' }
+  ];
+
+  priceRanges = [
+    { label: 'Under ₹5000', min: 0, max: 5000 },
+    { label: '₹5000 - ₹10000', min: 5000, max: 10000 },
+    { label: '₹10000 - ₹20000', min: 10000, max: 20000 },
+    { label: 'Above ₹20000', min: 20000, max: 999999 }
+  ];
+
+  selectedCategoryId: number[] = [];
+  selectedPriceRange: { min: number; max: number }[] = [];
+  searchTerm: string = '';
+  isAdmin: boolean = false;
+  showMsgDiv: boolean = false;
+  showFiltersDropdown: boolean = false;
+
+  constructor(private _productService: ProductService,
+    private authService: AuthService,
+    private router: Router) { }
+
+  ngOnInit() {
+    console.log("RoleId: ", this.authService.getUserRole());
+    this.isAdmin = this.authService.getUserRole() === 3;
+    this.fetchProducts(); // Load all products initially
+    //if (this.products == null || !this.products.length) {
+    //  this.showMsgDiv = true;
+    //}
+    //this.filteredProducts = this.products;
+  }
+
+  fetchProducts() {
+    this._productService.getProducts().subscribe(
+      response => {
+        this.products = response;
+        this.filteredProducts = response;
+        this.showMsgDiv = false;
+        this.applyFilters();
+      },
+      error => {
+        this.products = [];
+        console.log(error);
+      }
+    );
+  }
+
+  toggleFilterDropdown() {
+    this.showFiltersDropdown = !this.showFiltersDropdown;
+  }
+
+  applyFilters() {
+    const term = this.searchTerm.toLowerCase();
+
+    this.filteredProducts = this.products.filter(product => {
+      const matchesSearch = term === '' || product.name.toLowerCase().includes(term);
+
+      const matchesCategory =
+        this.selectedCategoryId.length === 0 ||
+        this.selectedCategoryId.includes(product.categoryId);
+
+      const matchesPrice =
+        this.selectedPriceRange.length === 0 ||
+        this.selectedPriceRange.some(range => product.price >= range.min && product.price <= range.max);
+
+      return matchesSearch && matchesCategory && matchesPrice;
+    });
+
+    this.showMsgDiv = this.filteredProducts.length === 0;
+  }
+
+  //getProductCategories() {
+  //  this._productService.getProductsByCategory(this.selectedCategoryId).subscribe(
+
+  //  );
+  //}
+
+
+  //applyFilters() {
+  //  const term = this.searchTerm.toLowerCase();
+  //  const { min, max } = this.selectedPriceRange;
+  //  console.log(term);
+  //  console.log(this.selectedCategoryId);
+  //  this.filteredProducts = this.products.filter(product => {
+  //    const matchesSearch = term === '' || product.name.toLowerCase().includes(term);
+  //    const matchesPrice = product.price >= min && product.price <= max;
+  //    return matchesSearch && matchesPrice;
+  //  });
+
+  //  this.showMsgDiv = this.filteredProducts.length === 0;
+  //}
+
+  onSearch() {
+    this.applyFilters();
+  }
+
+  onCategoryToggle(id: number) {
+    const index = this.selectedCategoryId.indexOf(id);
+    if (index > -1) {
+      this.selectedCategoryId.splice(index, 1);
+    } else {
+      this.selectedCategoryId.push(id);
+    }
+    this.applyFilters();
+  }
+
+  onPriceRangeToggle(range: { min: number; max: number }) {
+    const index = this.selectedPriceRange.findIndex(r => r.min === range.min && r.max === range.max);
+    if (index > -1) {
+      this.selectedPriceRange.splice(index, 1);
+    } else {
+      this.selectedPriceRange.push(range);
+    }
+    this.applyFilters();
+  }
+
+  clearFilters() {
+    this.selectedCategoryId = [];
+    this.selectedPriceRange = [];
+    this.searchTerm = '';
+    this.filteredProducts = this.products;
+    this.showFiltersDropdown = false;
+    this.applyFilters();
+  }
+
+  //onCategoryChange() {
+  //  this.searchProductbyCategory(this.selectedCategoryId.toString());
+  //}
+
+  //onPriceChange() {
+  //  this.applyFilters();
+  //}
+
+  updateProduct(product: IProduct) {
+    //console.log('Update product:', productId);
+    // Add navigation or modal logic here
+    this.router.navigate(['/update-product', product.productId, product.name, product.description,
+      product.price, product.categoryId, product.modelUrl, product.thumbnailUrl, product.quantity])
+
+  }
+
+  deleteProduct(productId: number) {
+    if (confirm('Are you sure you want to delete this product?')) {
+      this._productService.deleteProduct(productId).subscribe(
+        response => {
+          if (response) {
+            console.log("Deleted Successfully");
+            this.ngOnInit();
+          }
+          else {
+            console.log("Could not delete");
+          }
+        },
+        error => {
+          console.log("Some error occurred: " + error);
+        }
+      );
+    }
+  }
+
+  //searchProductbyCategory(categoryId: String) {
+  //  if (this.searchTerm && this.searchTerm.trim() !== "") {
+  //    this.filteredProducts == this.products?.filter(prod =>
+  //      prod.name.toLowerCase().includes(this.searchTerm.toLowerCase())
+  //    );
+  //  }
+  //  else {
+  //    this.filteredProducts = this.products;
+  //  }
+
+  //  if (categoryId !== "0") {
+  //    this.filteredProducts = this.filteredProducts?.filter(prod =>
+  //      prod.categoryId.toString() === categoryId);
+  //  }
+  //  this.showMsgDiv = this.filteredProducts.length === 0;
+  //}
+  viewProductDetails(productId:number):void {
+    this.router.navigate(['/product', productId]);
+  }
+}
+
+---
+<app-navbar></app-navbar>
+
+<!-- FILTER SECTION -->
+<div class="container my-4">
+  <div class="row justify-content-center align-items-center">
+    <!-- Category Dropdown -->
+    <div class="col-md-3">
+      <select class="form-select" [(ngModel)]="selectedCategoryId" (change)="onCategoryChange()">
+        <option *ngFor="let category of categories" [value]="category.id">{{ category.name }}</option>
+      </select>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="col-md-6">
+      <input type="text"
+             [(ngModel)]="searchTerm"
+             placeholder="Search products..."
+             (input)="onSearch()"
+             class="form-control" />
+    </div>
+
+    <!-- Price Dropdown -->
+    <div class="col-md-3 mt-3 mt-md-0">
+      <select class="form-select" [(ngModel)]="selectedPriceRange" (change)="onPriceChange()">
+        <option *ngFor="let range of priceRanges" [ngValue]="range">{{ range.label }}</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- NO PRODUCTS MESSAGE -->
+<div *ngIf="products.length===0 || filteredProducts.length === 0" class="text-center mt-5">
+  <div class="alert alert-warning w-50 mx-auto">
+    No products available.
+  </div>
+</div>
+
+<!-- PRODUCTS LISTING -->
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-md-4 mb-4" *ngFor="let product of filteredProducts">
+      <div class="card h-100 shadow-sm">
+        <img [src]="product.thumbnailUrl"
+             class="card-img-top"
+             alt="{{ product.name }}"
+             style="height: 250px; object-fit: cover; cursor: pointer;"
+             (click)="viewProductDetails(product.productId)" />
+        <div class="card-body">
+          <h5 class="card-title"
+              style="cursor: pointer;"
+              (click)="viewProductDetails(product.productId)">
+            {{ product.name }}
+          </h5>
+          <!--<p class="card-text">{{ product.description }}</p>-->
+          <p class="fw-bold text-success">₹{{ product.price }}</p>
+          <div *ngIf="isAdmin">
+            <button class="btn btn-sm btn-primary me-2" (click)="updateProduct(product)">Update</button>
+            <button class="btn btn-sm btn-danger" (click)="deleteProduct(product.productId)">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+modify this html code according to given component.ts code.
